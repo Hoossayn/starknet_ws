@@ -1,5 +1,5 @@
 #[starknet::interface]
-trait ICounter<TContractState> {
+pub trait ICounter<TContractState> {
     fn get_counter(self: @TContractState) -> u32;
     fn increase_counter(ref self: TContractState);
     fn decrease_counter(ref self: TContractState);
@@ -8,9 +8,9 @@ trait ICounter<TContractState> {
 
 
 #[starknet::contract]
-mod Counter {
+pub mod Counter {
     use OwnableComponent::InternalTrait;
-use super::ICounter;
+    use super::ICounter;
     use starknet::ContractAddress;
     use openzeppelin_access::ownable::OwnableComponent;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
@@ -40,14 +40,19 @@ use super::ICounter;
     }
 
     #[derive(Drop, starknet::Event)]
-    struct CounterIncreased {
-        counter: u32
+    pub struct CounterIncreased {
+       pub counter: u32
     }
 
     #[derive(Drop, starknet::Event)]
-    struct CounterDecreased {
-        counter: u32
+    pub struct CounterDecreased {
+        pub counter: u32
     }
+
+    pub mod Errors {
+        pub const NEGATIVE_COUNTER: felt252 = 'Counter can\'t be negative';
+    }
+
 
     #[constructor]
     fn constructor(ref self: ContractState, init_value: u32, owner: ContractAddress) {
@@ -70,7 +75,7 @@ use super::ICounter;
 
         fn decrease_counter(ref self: ContractState) {
             let old_counter = self.counter.read();
-            assert(old_counter > 0, 'Counter can\'t be negative');
+            assert(old_counter > 0, Errors::NEGATIVE_COUNTER);
             let new_counter = old_counter - 1;
             self.counter.write(new_counter);
             self.emit(CounterDecreased { counter: new_counter });
